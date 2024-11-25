@@ -2,6 +2,8 @@ const express = require('express');
 const sequelize = require('./config/config');
 const verifyToken = require('./middleware/verifyToken');
 const userRoutes = require('./routes/userRoutes');
+const serviceRoutes = require('./routes/serviceRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,9 +17,9 @@ sequelize.authenticate()
 app.use('/api/protected-route', verifyToken, (req, res) => {
   res.send("You are authenticated");
 });
-
 app.use('/api/users', userRoutes);
-
+app.use('/api/services', serviceRoutes);
+app.use('/api/appointments', appointmentRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
