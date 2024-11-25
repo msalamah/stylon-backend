@@ -24,4 +24,15 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Update FCM token
+router.put('/:id/fcm-token', async (req, res) => {
+  try {
+    const { fcm_token } = req.body;
+    await User.update({ fcm_token }, { where: { id: req.params.id } });
+    res.send("FCM token updated successfully");
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
 module.exports = router;

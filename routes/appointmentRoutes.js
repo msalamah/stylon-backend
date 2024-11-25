@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/appointment');
 const Service = require('../models/service');
+const User = require('../models/user');
+const { sendNotification } = require('../utils/notifications');
 
 // Create an appointment
 router.post('/', async (req, res) => {
@@ -25,6 +27,17 @@ router.post('/', async (req, res) => {
     }
 
     const appointment = await Appointment.create({ customer_id, service_id, appointment_date });
+
+    // Notify the customer
+    const customer = await User.findByPk(customer_id);
+    if (customer && customer.fcm_token) {
+      await sendNotification(
+        customer.fcm_token,
+        "Appointment Confirmed",
+        `Your appointment is scheduled for ${appointment_date}`
+      );
+    }
+
     res.status(201).send(appointment);
   } catch (error) {
     res.status(400).send({ error: error.message });
@@ -45,7 +58,21 @@ router.get('/customer/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { status } = req.body;
+    const appointment = await Appointment.findByPk(req.params.id);
+
+    if (!appointment) return res.status(404).send("Appointment not found");
+
     await Appointment.update({ status }, { where: { id: req.params.id } });
+
+    // Notify the customer
+    const customer = await User.findByPk(appointment.customer_id);
+    if (customer && customer.fcm_token) {
+      const message = status === 'Confirmed'
+        ? "Your appointment has been confirmed!"
+        : "Your appointment has been cancelled.";
+      await sendNotification(customer.fcm_token, "Appointment Status Updated", message);
+    }
+
     res.send("Appointment updated successfully");
   } catch (error) {
     res.status(400).send({ error: error.message });
